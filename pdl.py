@@ -106,17 +106,24 @@ class TkDownloadFrame(Frame):
 
     def refresh(self) -> None:
         if self.list.is_running():
-            self.total_progress["value"] = self.list.progress
-            self.total_progress["maximum"] = self.list.total
-            self.total_progress["mode"] = (
-                "determinate" if self.list.total > 0 else "indeterminate"
-            )
+            self._update_total_progress()
             self.total_progress.state(["!disabled"])
         else:
             self.total_progress.state(["disabled"])
 
         self.list.refresh()
         self.controls.refresh()
+
+    def _update_total_progress(self) -> None:
+        if self.list.total > 0 or not self.list.is_running():
+            self.total_progress["value"] = self.list.progress
+            self.total_progress["maximum"] = self.list.total
+            self.total_progress["mode"] = "determinate"
+        else:
+            steps = 200 * sum(e.is_running() for e in self.list.entries)
+            self.total_progress["maximum"] = steps
+            self.total_progress["mode"] = "indeterminate"
+            self.total_progress.step()
 
 
 class TkDownloadList(Frame):
@@ -294,11 +301,7 @@ class TkDownloadEntry(Frame):
         self.progress_bar.grid_forget()
 
         if self.is_running():
-            self.progress_bar["value"] = self.progress
-            self.progress_bar["maximum"] = self.total
-            self.progress_bar["mode"] = (
-                "determinate" if self.total > 0 else "indeterminate"
-            )
+            self._update_progress()
             self.progress_bar.grid(row=0, column=0, sticky="ew")
             self.remove.state(["disabled"])
         elif self.status_entry.get() != "":
@@ -322,6 +325,16 @@ class TkDownloadEntry(Frame):
         else:
             self.url_entry_valid = True
         self.list.frame.refresh()
+
+    def _update_progress(self) -> None:
+        if self.total > 0 or not self.is_running():
+            self.progress_bar["value"] = self.progress
+            self.progress_bar["maximum"] = self.total
+            self.progress_bar["mode"] = "determinate"
+        else:
+            self.progress_bar["maximum"] = 200
+            self.progress_bar["mode"] = "indeterminate"
+            self.progress_bar.step()
 
     def _download_callback(self, chunk: DownloadChunk | None) -> None:
         # NOTE: this callback runs in the event loop's thread

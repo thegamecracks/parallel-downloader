@@ -20,8 +20,8 @@ pip install https://github.com/thegamecracks/parallel-downloader
 
 ```sh
 pdl
-# or alternatively:
-python -m pdl
+# If you're on Windows and want to use the CLI:
+python -m pdl --help
 ```
 
 ## License

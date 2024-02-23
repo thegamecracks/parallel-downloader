@@ -198,6 +198,10 @@ class TkDownloadEntry(Frame):
         self.url_entry = Entry(self, textvariable=self.url_entry_var)
         self.url_entry_valid = not self.list.frame.validate_urls
 
+        self.status_entry_var = StringVar(self)
+        self.status_entry = Entry(self, textvariable=self.status_entry_var)
+        self.status_entry.state(["disabled"])
+
         self.progress_bar = Progressbar(self)
 
         self.remove = Button(self, text="X", command=self._do_remove)
@@ -272,22 +276,25 @@ class TkDownloadEntry(Frame):
         return not self.has_started() and self.url_entry_valid
 
     def refresh(self) -> None:
+        self.url_entry.grid_forget()
+        self.status_entry.grid_forget()
+        self.progress_bar.grid_forget()
+
         if self.is_running():
             self.progress_bar["value"] = self.progress
             self.progress_bar["maximum"] = self.total
             self.progress_bar["mode"] = (
                 "determinate" if self.total > 0 else "indeterminate"
             )
-            self.url_entry.grid_forget()
             self.progress_bar.grid(row=0, column=0, sticky="ew")
             self.remove.state(["disabled"])
+        elif self.status_entry.get() != "":
+            self.status_entry.grid(row=0, column=0, sticky="ew")
         elif self.has_started():
-            self.progress_bar.grid_forget()
             self.url_entry.grid(row=0, column=0, sticky="ew")
             self.url_entry.state(["disabled"])
             self.remove.state(["!disabled"])
         else:
-            self.progress_bar.grid_forget()
             self.url_entry.grid(row=0, column=0, sticky="ew")
             self.url_entry.state(["!disabled"])
             self.remove.state(["!disabled"])
@@ -312,26 +319,32 @@ class TkDownloadEntry(Frame):
         if chunk is None:
             return self._end_download()
 
+        file = self._try_open_file(chunk.filename)
+        if file is None:
+            return self.cancel()
+
         self.filename = chunk.filename
         self.progress = chunk.progress
         self.total = chunk.total
 
-        file = self._try_open_file(chunk.filename)
-        if file is not None:
-            file.write(chunk.data)
-            self.list.frame.refresh()  # FIXME: refresh independently of download?
-        else:
-            self.cancel()
+        file.write(chunk.data)
+        self.list.frame.refresh()  # FIXME: refresh independently of download?
 
     def _try_open_file(self, filename: str) -> BinaryIO | None:
         if self._file is not None:
             return self._file
+        elif self._interrupted:
+            return
 
         try:
             self._file = self.list.frame.writer_factory(filename)
+        except FileExistsError:
+            log.error("File %r already exists", filename)
+            self._set_status(f"File {filename} already exists")
+            return
         except Exception:
-            # TODO: show download failure to user
             log.exception("Failed to open %s", filename)
+            self._set_status(f"Failed to open {filename}")
             return
         else:
             return self._file
@@ -339,8 +352,10 @@ class TkDownloadEntry(Frame):
     def _end_download(self) -> None:
         if self.filename == "":
             log.error("No data received for %r", self.url_entry.get())
+            self._set_status("No data received")
         else:
             log.info("Successfully downloaded %s", self.filename)
+            self._set_status(f"Successfully downloaded {self.filename}")
 
         self._close_file()
         self.list.frame.refresh()
@@ -352,6 +367,10 @@ class TkDownloadEntry(Frame):
         self._file.close()
         self._file = None
         self._interrupted = True
+
+    def _set_status(self, message: str) -> None:
+        if message == "" or self.status_entry_var.get() == "":
+            self.status_entry_var.set(message)
 
     def destroy(self) -> None:
         self._close_file()

@@ -669,7 +669,6 @@ def configure_logging(verbose: int) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        prog=__package__,
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

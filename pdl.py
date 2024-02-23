@@ -23,6 +23,19 @@ import httpx
 
 log = logging.getLogger(__name__)
 
+
+def _get_version() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("parallel-downloader")
+    except PackageNotFoundError:
+        return ""
+
+
+__version__ = _get_version()
+
+
 # ===== UI =====
 
 HTTP_URL_REGEX = re.compile(
@@ -678,6 +691,12 @@ def main():
         action="count",
         default=0,
         help="Increase logging verbosity",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"{parser.prog} {__version__}",
     )
     parser.add_argument(
         "-n",

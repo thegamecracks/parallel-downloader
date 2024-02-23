@@ -27,3 +27,7 @@ python -m pdl --help
 ## License
 
 This project is written under the MIT license.
+
+## Demo
+
+![](/docs/images/demo.gif)

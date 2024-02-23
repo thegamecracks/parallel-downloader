@@ -183,17 +183,13 @@ class TkDownloadList(Frame):
 
 
 class TkDownloadEntry(Frame):
+    download: Download | None
+    _file: BinaryIO | None
+
     def __init__(self, parent: TkDownloadList) -> None:
         super().__init__(parent)
 
         self.list = parent
-
-        self.download: Download | None = None
-        self.filename = ""
-        self.progress = 0
-        self.total = 0
-        self._file: BinaryIO | None = None
-        self._interrupted = False
 
         self.grid_columnconfigure(0, weight=1)
 
@@ -207,7 +203,16 @@ class TkDownloadEntry(Frame):
         self.remove = Button(self, text="X", command=self._do_remove)
         self.remove.grid(row=0, column=1)
 
+        self._reset()
         self.refresh()
+
+    def _reset(self) -> None:
+        self.download = None
+        self.filename = ""
+        self.progress = 0
+        self.total = 0
+        self._file = None
+        self._interrupted = False
 
     def start(self) -> None:
         # NOTE: for now, a download entry can only be started once
@@ -215,10 +220,8 @@ class TkDownloadEntry(Frame):
             return
 
         self.cancel()
+        self._reset()
 
-        # FIXME: it's not obvious what attributes need to be reset
-        self.filename = ""
-        self._interrupted = False
         url = self.url_entry.get()
         log.debug("Starting download for url %r", url)
 

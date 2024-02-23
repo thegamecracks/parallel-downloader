@@ -306,6 +306,7 @@ class TkDownloadEntry(Frame):
             self.remove.state(["disabled"])
         elif self.status_entry.get() != "":
             self.status_entry.grid(row=0, column=0, sticky="ew")
+            self.remove.state(["!disabled"])
         elif self.has_started():
             self.url_entry.grid(row=0, column=0, sticky="ew")
             self.url_entry.state(["disabled"])

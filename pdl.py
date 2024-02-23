@@ -311,6 +311,7 @@ class TkDownloadEntry(Frame):
         self.list.frame.refresh()
 
     def _download_callback(self, chunk: DownloadChunk | None) -> None:
+        # NOTE: this callback runs in the event loop's thread
         if self._interrupted:
             return
 
@@ -361,12 +362,10 @@ class TkDownloadEntry(Frame):
         self.list.frame.refresh()
 
     def _close_file(self) -> None:
-        if self._file is None:
-            return
-
-        self._file.close()
-        self._file = None
         self._interrupted = True
+        if self._file is not None:
+            self._file.close()
+            self._file = None
 
     def _set_status(self, message: str) -> None:
         if message == "" or self.status_entry_var.get() == "":

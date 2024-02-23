@@ -237,6 +237,7 @@ class TkDownloadEntry(Frame):
         self.total = 0
         self._file = None
         self._interrupted = False
+        self._set_status("")
 
     def start(self) -> None:
         # NOTE: for now, a download entry can only be started once

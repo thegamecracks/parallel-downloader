@@ -339,15 +339,15 @@ class TkDownloadEntry(Frame):
             self.progress_bar["mode"] = "indeterminate"
             self.progress_bar.step()
 
-    def _download_callback(self, chunk: DownloadChunk | None) -> None:
+    def _download_callback(self, chunk: DownloadChunk | BaseException | None) -> None:
         # NOTE: this callback runs in the event loop's thread
         if self._interrupted:
             return
 
         assert self.download is not None
 
-        if chunk is None:
-            return self._end_download()
+        if chunk is None or isinstance(chunk, BaseException):
+            return self._end_download(chunk)
 
         file = self._try_open_file(chunk.filename)
         if file is None:
@@ -379,13 +379,17 @@ class TkDownloadEntry(Frame):
         else:
             return self._file
 
-    def _end_download(self) -> None:
-        if self.filename == "":
-            log.error("No data received for %r", self.url_entry.get())
+    def _end_download(self, exc: BaseException | None) -> None:
+        filename = self.filename or self.url_entry.get()
+        if exc is not None:
+            log.error("Failed to download %r", filename)
+            self._set_status(f"Failed to download {filename}")
+        elif self.filename == "":
+            log.error("No data received for %r", filename)
             self._set_status("No data received")
         else:
-            log.info("Successfully downloaded %s", self.filename)
-            self._set_status(f"Successfully downloaded {self.filename}")
+            log.info("Successfully downloaded %r", filename)
+            self._set_status(f"Successfully downloaded {filename}")
 
         self._close_file()
         self.list.frame.refresh()
@@ -479,7 +483,7 @@ class Download(Protocol):
 
 
 class DownloadCallback(Protocol):
-    def __call__(self, chunk: DownloadChunk | None, /) -> Any: ...
+    def __call__(self, chunk: DownloadChunk | BaseException | None, /) -> Any: ...
 
 
 @dataclass(kw_only=True)
@@ -581,7 +585,7 @@ class HTTPXDownload(Download):
             self.thread.loop,
         )
         self._fut.add_done_callback(log_fut_exception)
-        self._fut.add_done_callback(lambda fut: self.callback(None))
+        self._fut.add_done_callback(self._send_end_of_file)
 
     def pause(self) -> None:
         self.thread.loop.call_soon_threadsafe(self._resume.clear)
@@ -629,6 +633,12 @@ class HTTPXDownload(Download):
             self.callback(chunk)
 
             await self._resume.wait()
+
+    def _send_end_of_file(self, fut: concurrent.futures.Future) -> None:
+        if fut.cancelled():
+            self.callback(None)
+        else:
+            self.callback(fut.exception())
 
     @staticmethod
     def get_filename_from_url(raw_url: str, content_type: str) -> str:

@@ -14,7 +14,7 @@ import re
 import threading
 from dataclasses import dataclass, field
 from io import BytesIO
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from tkinter import StringVar, Tk
 from tkinter.ttk import Button, Entry, Frame, Progressbar
 from typing import Any, BinaryIO, Protocol, Self
@@ -711,20 +711,31 @@ def main():
         action="version",
         version=f"{parser.prog} {__version__}",
     )
-    parser.add_argument(
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument(
         "-n",
         "--dry-run",
         action="store_true",
         help="Don't actually download anything",
     )
+    output_group.add_argument(
+        "-o",
+        "--output-dir",
+        default=Path(),
+        type=Path,
+        help="The directory to write files to (defaults to CWD)",
+    )
 
     args = parser.parse_args()
+    verbose: int = args.verbose
+    dry_run: bool = args.dry_run
+    output_dir: Path = args.output_dir
 
-    configure_logging(args.verbose)
+    configure_logging(verbose)
 
     app = TkApp()
     with EventThread() as event_thread:
-        if args.dry_run:
+        if dry_run:
             download_factory = functools.partial(DummyDownload, app)
             writer_factory = lambda *_: BytesIO()
         else:
@@ -733,7 +744,11 @@ def main():
                 event_thread,
                 httpx.AsyncClient(),  # TODO: use with context manager
             )
-            writer_factory = functools.partial(open, mode="xb")
+            output_dir.mkdir(parents=True, exist_ok=True)
+            writer_factory = lambda filename: open(
+                output_dir / filename,
+                mode="xb",
+            )
 
         app.switch_frame(
             TkDownloadFrame(

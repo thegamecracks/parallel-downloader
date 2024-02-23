@@ -272,6 +272,7 @@ class TkDownloadEntry(Frame):
         if self.download is None:
             return
 
+        self._set_status(f"Interrupted download for {self.filename}")
         self._close_file()
         self.download.cancel()
         self.list.frame.refresh()

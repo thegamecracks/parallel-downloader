@@ -1,3 +1,7 @@
+"""
+Starts a GUI for downloading files over HTTP.
+"""
+
 from __future__ import annotations
 
 import argparse

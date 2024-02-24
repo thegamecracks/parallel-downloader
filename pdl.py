@@ -669,6 +669,8 @@ class HTTPXDownload(Download):
         return not self._resume.is_set()
 
     async def _start_stream(self) -> None:
+        await self._resume.wait()
+
         async with self.client.stream(
             "GET",
             self.url,
@@ -685,6 +687,8 @@ class HTTPXDownload(Download):
 
         total = int(response.headers.get("Content-Length", "0"))
         log.debug("Expecting %d bytes for %r", total, self.url)
+
+        await self._resume.wait()
 
         async for data in response.aiter_bytes():
             chunk = DownloadChunk(

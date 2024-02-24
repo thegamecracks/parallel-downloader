@@ -140,11 +140,11 @@ class TkDownloadList(Frame):
 
     @property
     def progress(self) -> int:
-        return sum(e.progress for e in self.entries if e.is_running())
+        return sum(e.progress for e in self.entries if e.has_started())
 
     @property
     def total(self) -> int:
-        return sum(e.total for e in self.entries if e.is_running())
+        return sum(e.total for e in self.entries if e.has_started())
 
     def is_running(self) -> bool:
         return any(e.is_running() for e in self.entries)

@@ -659,10 +659,8 @@ class HTTPXDownload(Download):
         self.thread.loop.call_soon_threadsafe(self._resume.set)
 
     def cancel(self) -> None:
-        if self._fut is None or self._fut.cancelled():
-            return
-
-        self._fut.cancel()
+        if self._fut is not None:
+            self._fut.cancel()
 
     def is_running(self) -> bool:
         return self._fut is not None and not self._fut.done()

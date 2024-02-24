@@ -298,22 +298,30 @@ class TkDownloadEntry(Frame):
         return not self.has_started() and self.url_entry_valid
 
     def refresh(self) -> None:
-        self.url_entry.grid_forget()
-        self.status_entry.grid_forget()
-        self.progress_bar.grid_forget()
-
         if self.is_running():
+            self.url_entry.grid_forget()
+            self.status_entry.grid_forget()
+
             self._update_progress()
             self.progress_bar.grid(row=0, column=0, sticky="ew")
             self.remove.state(["disabled"])
         elif self.status_entry.get() != "":
+            self.url_entry.grid_forget()
+            self.progress_bar.grid_forget()
+
             self.status_entry.grid(row=0, column=0, sticky="ew")
             self.remove.state(["!disabled"])
         elif self.has_started():
+            self.status_entry.grid_forget()
+            self.progress_bar.grid_forget()
+
             self.url_entry.grid(row=0, column=0, sticky="ew")
             self.url_entry.state(["disabled"])
             self.remove.state(["!disabled"])
         else:
+            self.status_entry.grid_forget()
+            self.progress_bar.grid_forget()
+
             self.url_entry.grid(row=0, column=0, sticky="ew")
             self.url_entry.state(["!disabled"])
             self.remove.state(["!disabled"])

@@ -695,7 +695,8 @@ class EventThread(threading.Thread):
 
 def configure_logging(verbose: int) -> None:
     if verbose == 0:
-        return
+        fmt = "%(levelname)s: %(message)s"
+        level = logging.WARNING
     elif verbose == 1:
         fmt = "%(levelname)s: %(message)s"
         level = logging.INFO

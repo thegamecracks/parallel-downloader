@@ -578,7 +578,7 @@ class DummyDownload(Download):
         self._progress = 0
         self._total = 100
         self._started = False
-        self._stop = False
+        self._stopped = False
         self._paused = False
         self._interval_ms = 40
 
@@ -596,16 +596,16 @@ class DummyDownload(Download):
         self._paused = False
 
     def cancel(self) -> None:
-        self._stop = True
+        self._stopped = True
 
     def is_running(self) -> bool:
-        return not self._stop and self._progress < self._total
+        return not self._stopped and self._progress < self._total
 
     def is_paused(self) -> bool:
         return self._paused
 
     def _step(self) -> None:
-        if self._stop:
+        if self._stopped:
             return
         elif self._paused:
             self.app.after(self._interval_ms, self._step)

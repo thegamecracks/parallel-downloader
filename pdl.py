@@ -577,11 +577,16 @@ class DummyDownload(Download):
         self._data = b"foobar\n"
         self._progress = 0
         self._total = 100
+        self._started = False
         self._stop = False
         self._paused = False
         self._interval_ms = 40
 
     def start(self) -> None:
+        if self._started:
+            return
+
+        self._started = True
         self._step()
 
     def pause(self) -> None:

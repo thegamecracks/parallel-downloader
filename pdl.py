@@ -482,12 +482,69 @@ class DownloadFactory(Protocol):
 
 
 class Download(Protocol):
-    def start(self) -> None: ...
-    def pause(self) -> None: ...
-    def resume(self) -> None: ...
-    def cancel(self) -> None: ...
-    def is_running(self) -> bool: ...
-    def is_paused(self) -> bool: ...
+    """A controllable, one-time download.
+
+    All methods provided should be idempotent.
+
+    """
+
+    def start(self) -> None:
+        """Starts the download.
+
+        This should cause is_running() to immediately return True
+        unless the download was already cancelled.
+
+        """
+        ...
+
+    def pause(self) -> None:
+        """Pauses the download.
+
+        If the download has not yet started, the download should be
+        paused as soon as it starts.
+
+        """
+        ...
+
+    def resume(self) -> None:
+        """Resumes the download.
+
+        If the download has not yet started, the download should be
+        resumed as soon as it starts.
+
+        """
+        ...
+
+    def cancel(self) -> None:
+        """Cancels the download.
+
+        This should cause is_running() to immediately return False,
+        even if the underlying download has not yet been cancelled.
+
+        If the download is not yet started, this should prevent the
+        download from running.
+
+        """
+        ...
+
+    def is_running(self) -> bool:
+        """Checks if the download is currently in progress.
+
+        This should return True as soon as start() is called, unless
+        cancel() was called beforehand. It should also return True when
+        the download is paused.
+
+        """
+        ...
+
+    def is_paused(self) -> bool:
+        """Checks if the download is currently paused.
+
+        This can be True or False regardless of whether the download is
+        running.
+
+        """
+        ...
 
 
 class DownloadCallback(Protocol):

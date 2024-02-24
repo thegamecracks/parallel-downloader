@@ -105,8 +105,8 @@ class TkDownloadFrame(Frame):
         self.refresh()
 
     def refresh(self) -> None:
+        self._update_total_progress()
         if self.list.is_running():
-            self._update_total_progress()
             self.total_progress.state(["!disabled"])
         else:
             self.total_progress.state(["disabled"])

@@ -619,6 +619,7 @@ class HTTPXDownload(Download):
             self.url,
             follow_redirects=True,
         ) as response:
+            response.raise_for_status()
             await self._download_stream(response)
 
     async def _download_stream(self, response: httpx.Response) -> None:

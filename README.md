@@ -1,10 +1,7 @@
 # parallel-downloader
 
 A single Python script providing a graphical interface to download
-one or more files in parallel.
-
-This is written in Python, using tkinter for its GUI and [httpx]
-as the asynchronous HTTP client.
+one or more files in parallel. Written with tkinter and [httpx].
 
 [httpx]: https://www.python-httpx.org/
 

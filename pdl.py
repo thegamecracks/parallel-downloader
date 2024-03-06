@@ -17,7 +17,7 @@ from io import BytesIO
 from pathlib import Path, PurePosixPath
 from tkinter import Canvas, Event, StringVar, Tk, Widget
 from tkinter.ttk import Button, Entry, Frame, Progressbar, Scrollbar, Style
-from typing import Any, BinaryIO, Protocol, Self
+from typing import Any, BinaryIO, Callable, Protocol, Self
 from weakref import WeakSet
 
 import httpx
@@ -59,8 +59,11 @@ def log_fut_exception(fut: concurrent.futures.Future) -> None:
 
 
 class TkApp(Tk):
-    def __init__(self):
+    def __init__(self, event_thread: EventThread):
         super().__init__()
+
+        self.event_thread = event_thread
+        self._connect_lifetime_with_event_thread(event_thread)
 
         self.title("Parallel Downloader")
         self.geometry("480x480")
@@ -71,10 +74,29 @@ class TkApp(Tk):
         self.frame = Frame(self)
         self.frame.grid()
 
+        self.bind("<<Destroy>>", self._on_destroy)
+
     def switch_frame(self, frame: Frame) -> None:
         self.frame.destroy()
         self.frame = frame
         self.frame.grid(sticky="nesw")
+
+    def _connect_lifetime_with_event_thread(self, event_thread: EventThread) -> None:
+        # In our application we'll be running an asyncio event loop in
+        # a separate thread. This event loop may try to run methods on
+        # our GUI like event_generate(), which requires the GUI to be running.
+        # If the GUI is destroyed first, it may cause a deadlock
+        # in the other thread, preventing our program from exiting.
+        # As such, we need to defer GUI destruction until the event thread
+        # is finished.
+        event_callback = lambda fut: self.event_generate("<<Destroy>>")
+        event_thread.finished_fut.add_done_callback(event_callback)
+
+    def destroy(self) -> None:
+        self.event_thread.stop()
+
+    def _on_destroy(self, event: Event) -> None:
+        super().destroy()
 
 
 class TkDownloadFrame(Frame):
@@ -842,6 +864,7 @@ class EventThread(threading.Thread):
 
     def __exit__(self, exc_type, exc_val, tb) -> None:
         self.stop()
+        self.join()
 
     @property
     def loop(self) -> asyncio.AbstractEventLoop:
@@ -854,8 +877,8 @@ class EventThread(threading.Thread):
             self.finished_fut.set_result(None)
 
     def stop(self) -> None:
-        self.stop_fut.set_result(None)
-        self.finished_fut.result()
+        if not self.stop_fut.done():
+            self.stop_fut.set_result(None)
 
     async def _run_forever(self) -> None:
         self.loop_fut.set_result(asyncio.get_running_loop())
@@ -916,8 +939,8 @@ def main():
 
     configure_logging(verbose)
 
-    app = TkApp()
     with EventThread() as event_thread:
+        app = TkApp(event_thread)
         if dry_run:
             download_factory = functools.partial(DummyDownload, app)
             writer_factory = lambda *_: BytesIO()

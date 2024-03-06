@@ -17,7 +17,7 @@ from io import BytesIO
 from pathlib import Path, PurePosixPath
 from tkinter import Canvas, Event, StringVar, Tk, Widget
 from tkinter.ttk import Button, Entry, Frame, Progressbar, Scrollbar, Style
-from typing import Any, BinaryIO, Callable, Protocol, Self
+from typing import Any, BinaryIO, Protocol, Self
 from weakref import WeakSet
 
 import httpx

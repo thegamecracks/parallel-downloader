@@ -10,6 +10,7 @@ import concurrent.futures
 import functools
 import logging
 import mimetypes
+import platform
 import re
 import threading
 from dataclasses import dataclass, field
@@ -899,6 +900,13 @@ def configure_logging(verbose: int) -> None:
     logging.basicConfig(format=fmt, level=level)
 
 
+def enable_windows_dpi_awareness():
+    if platform.system() == "Windows":
+        from ctypes import windll
+
+        windll.shcore.SetProcessDpiAwareness(2)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -938,6 +946,7 @@ def main():
     output_dir: Path = args.output_dir
 
     configure_logging(verbose)
+    enable_windows_dpi_awareness()
 
     with EventThread() as event_thread:
         app = TkApp(event_thread)

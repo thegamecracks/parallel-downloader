@@ -67,7 +67,7 @@ class TkApp(Tk):
         self._connect_lifetime_with_event_thread(event_thread)
 
         self.title("Parallel Downloader")
-        self.geometry("480x480")
+        self.geometry("600x600")
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
